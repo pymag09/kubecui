@@ -24,16 +24,13 @@ However, kubectl slows you down - requires heavy keyboard typing. In order to al
 Most probabaly you are falimiar with or already use `k` alias for `kubectl`. If so, you will be happy to hear, that kubecui is k alias in essence.
 
 * k get \<OBJECT\>
-  
+  ![k get pod](https://github.com/pymag09/kubecui/blob/main/images/kgetpod.png)
 * k logs
-  - Upper panel - log in follow mode
-  - Lower panel - list of pods
+  ![k logs](https://github.com/pymag09/kubecui/blob/main/images/klogs.png)
 * k expain
-  - Left panel - kubectl api-resources
-  - Right panel - `k describe api-resource`.
+  ![k expain](https://github.com/pymag09/kubecui/blob/main/images/kexplain.png)
 * k explain \<OBJECT\>
-  - Left panel - All object fields
-  - Right panel - Description of the field
+  ![k explain pod](https://github.com/pymag09/kubecui/blob/main/images/kexplainpod.png)
 * k config use-context
   - Singale panel. Switch between kubeconfig contexts
 * k config set ns
