@@ -1,7 +1,7 @@
 #!/bin/bash
 
 __logs__(){
-  FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
+  export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
   fzf --info=inline --layout=reverse --header-lines=1 \
    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
    --header $'>> Enter (kubectl exec) || CTRL-L (open log in editor) || CTRL-R (refresh) || CTRL-/ (change view) <<\n\n' \
@@ -14,9 +14,9 @@ __logs__(){
 }
 
 __get_obj__(){
-  RS_TYPE=$(echo $1 | base64 -d)
-  FZF_DEFAULT_COMMAND="kubectl get ${RS_TYPE} -n ${NAMESPACE:-default}"
-  FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
+  export RS_TYPE=$(echo $1 | base64 -d)
+  export FZF_DEFAULT_COMMAND="kubectl get ${RS_TYPE} -n ${NAMESPACE:-default}"
+  export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
   fzf --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
@@ -30,9 +30,9 @@ __get_obj__(){
 } \
 
 __get_obj_all__(){
-  RS_TYPE=$(echo $1 | base64 -d)
-  FZF_DEFAULT_COMMAND="kubectl get $RS_TYPE -A"
-  FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
+  export RS_TYPE=$(echo $1 | base64 -d)
+  export FZF_DEFAULT_COMMAND="kubectl get $RS_TYPE -A"
+  export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
   fzf --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
@@ -46,7 +46,7 @@ __get_obj_all__(){
 }
 
 __explain__(){
-  FZF_DEFAULT_COMMAND="kubectl api-resources"
+  export FZF_DEFAULT_COMMAND="kubectl api-resources" \
   fzf --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
@@ -60,7 +60,7 @@ __explain__(){
 }
 
 __prepare_explain__(){
-  RS_TYPE=$1
+  export RS_TYPE=$1
 
   EXPLAIN=$(kubectl explain ${RS_TYPE} --recursive | sed -r 's/FIELDS:/---/' | sed -n '\|---|,$p' | sed -r 's/(\w+)\t.*/\1:/g' | yq -o props -P . | sed -r 's/ =//g')
 
@@ -75,12 +75,12 @@ __prepare_explain__(){
 }
 
 __explain_obj__(){
-  RS_TYPE=$1
+  export RS_TYPE=$1
   __prepare_explain__ $1 | fzf --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) Ctrl-f (search word) <<\n\n' \
-    --preview-window=right:50% \
-    --bind 'ctrl-/:change-preview-window(70%|40%|50%)' \
+    --preview-window=right:70% \
+    --bind 'ctrl-/:change-preview-window(40%|50%|70%)' \
     --bind 'enter:accept' \
     --bind 'ctrl-f:execute:kubectl explain ${RS_TYPE}.{1} | less' \
     --preview 'kubectl explain ${RS_TYPE}.{1}'
