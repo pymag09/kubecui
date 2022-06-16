@@ -34,7 +34,6 @@ Most probabaly you are falimiar with or already use `k` alias for `kubectl`. If 
 * k explain \<OBJECT\>
   ![k explain pod](https://github.com/pymag09/kubecui/blob/main/images/kubecuiexplain.gif)
   ![k explain pod](https://github.com/pymag09/kubecui/blob/main/images/kexplainpod.png)
-  
 * k config use-context
   - Singale panel. Switch between kubeconfig contexts
 * k config set ns

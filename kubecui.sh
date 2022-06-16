@@ -46,7 +46,7 @@ __get_obj_all__(){
 }
 
 __explain__(){
-  export FZF_DEFAULT_COMMAND="kubectl api-resources" \
+  export FZF_DEFAULT_COMMAND="kubectl api-resources"
   fzf --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
