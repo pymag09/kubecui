@@ -18,6 +18,8 @@ However, kubectl slows you down - requires heavy keyboard typing. In order to al
 * git clone https://github.com/pymag09/kubecui.git
 * chmod +x kubecui.sh
 * add kubecui.sh to .bashrc or any other shell configuration file, other than bash
+  * source /home/\<PATH\>/kubecui/kubecui.sh
+
 
 ## Commands
 
