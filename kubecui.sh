@@ -27,7 +27,7 @@ __get_obj__(){
     --bind 'ctrl-f:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
     --bind 'enter:accept' \
     --preview 'kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1}'
-} \
+}
 
 __get_obj_all__(){
   export RS_TYPE=$(echo $1 | base64 -d)
@@ -113,7 +113,7 @@ k() {
 
     ?(-n | --namespace)?([a-z0-9-]*)get?( )+([a-z]*)?(-n | --namespace)?([0-9a-z-]*) )
             NS=$(kubectl $@ -o jsonpath='{.items[*].metadata.namespace}' | sed 's/ /\n/g' | uniq)
-            NAMESPACE=${NS:-$(kubectl $@ -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
+            export NAMESPACE=${NS:-$(kubectl $@ -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
               __get_obj__ $OBJ
             ;;
     *) kubectl $@;;
