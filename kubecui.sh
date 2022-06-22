@@ -103,7 +103,7 @@ k() {
     explain+( )+([a-z]*) )
             __explain_obj__ $(echo $@ | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
 
-    *-o?( )?(yaml|wide)?(*) ) kubectl $@;;
+    *-o?( )?(*) ) kubectl $@;;
 
     ?( )get?( )+([a-z|.])?( )+(-A|--all-namespaces) )
             __get_obj_all__ $OBJ;;
