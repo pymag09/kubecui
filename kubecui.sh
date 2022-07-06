@@ -45,6 +45,19 @@ __get_obj_all__(){
     --preview 'kubectl describe $RS_TYPE {2} -n {1}'
 }
 
+__top_all__(){
+  export FZF_DEFAULT_COMMAND="kubectl top pod -A --no-headers"
+  fzf --info=inline \
+    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
+    --header $'>> Sort by .. Ctrl + u: CPU || Ctrl + m: MEM  <<\n\n' \
+    --preview-window=right:50% \
+    --bind 'ctrl-/:change-preview-window(70%|40%|50%)' \
+    --bind 'enter:accept' \
+    --bind 'ctrl-u:reload:$FZF_DEFAULT_COMMAND | sort -k 3 -h -r' \
+    --bind 'ctrl-m:reload:$FZF_DEFAULT_COMMAND | sort -k 4 -h -r' \
+    --preview 'kubectl describe pod {2} -n {1}'
+}
+
 __explain__(){
   export FZF_DEFAULT_COMMAND="kubectl api-resources"
   fzf --header-lines=1 --info=inline \
@@ -99,6 +112,8 @@ k() {
     "logs") __logs__;;
 
     "explain" ) __explain__;;
+
+    ?( )top?( )pod?( )+(-A|--all-namespaces) ) __top_all__;;
 
     explain+( )+([a-z]*) )
             __explain_obj__ $(echo $@ | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
