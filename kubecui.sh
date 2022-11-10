@@ -17,11 +17,11 @@ __get_obj__(){
   export RS_TYPE=$(echo $1 | base64 -d)
   export FZF_DEFAULT_COMMAND="kubectl get ${RS_TYPE} -n ${NAMESPACE:-default}"
   export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
-  fzf --header-lines=1 --info=inline \
+  fzf --layout=reverse --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
     --preview-window=right:50% \
-    --bind 'ctrl-/:change-preview-window(70%|40%|50%)' \
+    --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
     --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
     --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
     --bind 'ctrl-f:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
@@ -33,11 +33,11 @@ __get_obj_all__(){
   export RS_TYPE=$(echo $1 | base64 -d)
   export FZF_DEFAULT_COMMAND="kubectl get $RS_TYPE -A"
   export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
-  fzf --header-lines=1 --info=inline \
+  fzf --layout=reverse --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
     --preview-window=right:50% \
-    --bind 'ctrl-/:change-preview-window(70%|40%|50%)' \
+    --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
     --bind 'enter:accept' \
     --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
     --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
@@ -47,7 +47,7 @@ __get_obj_all__(){
 
 __top_all__(){
   export FZF_DEFAULT_COMMAND="kubectl top pod -A --no-headers"
-  fzf --info=inline \
+  fzf --info=inline --layout=reverse \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Sort by .. Ctrl + u: CPU || Ctrl + m: MEM  <<\n\n' \
     --preview-window=right:50% \
@@ -60,7 +60,7 @@ __top_all__(){
 
 __explain__(){
   export FZF_DEFAULT_COMMAND="kubectl api-resources"
-  fzf --header-lines=1 --info=inline \
+  fzf --layout=reverse --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
     --preview-window=right:50% \
@@ -89,7 +89,7 @@ __prepare_explain__(){
 
 __explain_obj__(){
   export RS_TYPE=$1
-  __prepare_explain__ $1 | fzf --header-lines=1 --info=inline \
+  __prepare_explain__ $1 | fzf --layout=reverse --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) Ctrl-f (search word) <<\n\n' \
     --preview-window=right:70% \
@@ -100,14 +100,14 @@ __explain_obj__(){
 }
 
 k() {
-  OBJ=$(echo $@ | sed -r 's/^.*get[[:space:]](\w+[[:space:]]?[a-z]+[-0-9a-z]*)[[:space:]]?(-n)?.*$/\1/' | base64)
+  OBJ=$(echo "$@" | sed -r 's/^.*get[[:space:]](\w+[[:space:]]?[a-z]+[-0-9a-z]*)[[:space:]]?(-n)?.*$/\1/' | base64)
   shopt -s extglob
   case "$@" in
-    "config use-context" )  kubectl config use-context $(kubectl config get-contexts | fzf  --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
+    "config use-context" )  kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
 
     "config set ns" )
             CURRENT_CONTEXT=$(kubectl config current-context)
-            kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
+            kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --layout=reverse --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
 
     "logs") __logs__;;
 
@@ -116,21 +116,21 @@ k() {
     ?( )top?( )pod?( )+(-A|--all-namespaces) ) __top_all__;;
 
     explain+( )+([a-z]*) )
-            __explain_obj__ $(echo $@ | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
+            __explain_obj__ $(echo "$@" | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
 
-    *-o?( )?(*) ) kubectl $@;;
+    *-o?( )?(*) ) kubectl "$@";;
 
     ?( )get?( )+([a-z|.])?( )+(-A|--all-namespaces) )
             __get_obj_all__ $OBJ;;
 
     ?(-n|--namespace)?([a-z0-9-]*)?( )get?( )events?( )?(-A|--all-namespaces)?(-n|--namespace)?([a-z0-9-]*) )
-            kubectl $@ --sort-by=.lastTimestamp;;
+            kubectl "$@" --sort-by=.lastTimestamp;;
 
     ?(-n | --namespace)?([a-z0-9-]*)get?( )+([a-z]*)?(-n | --namespace)?([0-9a-z-]*) )
-            NS=$(kubectl $@ -o jsonpath='{.items[*].metadata.namespace}' | sed 's/ /\n/g' | uniq)
-            export NAMESPACE=${NS:-$(kubectl $@ -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
+            NS=$(kubectl "$@" -o jsonpath='{.items[*].metadata.namespace}' | sed 's/ /\n/g' | uniq)
+            export NAMESPACE=${NS:-$(kubectl "$@" -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
               __get_obj__ $OBJ
             ;;
-    *) kubectl $@;;
+    *) kubectl "$@";;
   esac
 }
