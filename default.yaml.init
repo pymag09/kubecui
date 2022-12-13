@@ -1,0 +1,33 @@
+session_name: default
+windows:
+- focus: 'true'
+  layout: 8313,253x71,0,0[253x63,0,0,103,253x7,0,64,104]
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command:
+      - export KUBECONFIG=~/.kube/<DEV_KUBECONFIG>.yml
+      - clear
+  start_directory: /home/<USERNAME>
+  window_name: <ENV NAME - Dev>
+- layout: ae24,253x71,0,0,105
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command:
+      - export KUBECONFIG=~/.kube/<STG_KUBECONFIG>.yml
+      - clear
+  start_directory: /home/<USERNAME>
+  window_name: <ENV NAME - Stg>
+- layout: a245,800x600,0,0,106
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command:
+      - export KUBECONFIG=~/.kube/<PROD_KUBECONFIG>.yml
+      - clear
+  start_directory: /home/<USERNAME>
+  window_name: <ENV NAME - Prod>
