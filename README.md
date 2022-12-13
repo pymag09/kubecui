@@ -44,6 +44,7 @@ If everything is ready execute `k start`
 Pay attention to the red rectangle. These are your clusters. `*` next to cluster points to the active window/cluster.  
 Key combinations you may find helpful:
 * **Ctrl+b 1,2,3,n** OR **Ctrl+b w** - switch between windows/clusters
+  * ![windows](https://github.com/pymag09/kubecui/blob/main/images/tmux_windows.png)
 * **Ctrl+b d** - exit multi-widow session
 * **Ctrl+b [** - edit mode. You can move cursor, scroll up/down, select and copy text.
 * **Ctrl+r** - if you followed the installation instructions for fzf, most probably you use fzf to browse shell history. If you didn't, you should try, cause it is fun and makes your experience with kubecui more plesant.
