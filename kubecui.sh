@@ -111,6 +111,12 @@ k() {
 
     "logs") __logs__;;
 
+    "start") if [[ -n $(which tmuxp) ]]; then
+              ${KUI_PATH}/kui_start.sh
+             else
+              echo "Can not find tmux/tmuxp. Please follow the instructions in the README file to install these tools"
+             fi;;
+
     "explain" ) __explain__;;
 
     ?( )top?( )pod?( )+(-A|--all-namespaces) ) __top_all__;;
