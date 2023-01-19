@@ -1,0 +1,85 @@
+session_name: 'Prod'
+shell_command_before:
+  - export KUBECONFIG=<KUBECONFIG_PATH>
+windows:
+- focus: 'true'
+  layout: b75d,253x71,0,0,0
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k get pods -A
+  start_directory: $HOME
+  window_name: pods
+- layout: b75e,253x71,0,0,1
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k get deploy -A
+  start_directory: $HOME
+  window_name: deployments
+- layout: b75f,253x71,0,0,2
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k get ingress -A
+  start_directory: $HOME
+  window_name: ingress
+- layout: b780,125x71,0,0,3
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k get secrets -A
+  start_directory: $HOME
+  window_name: secrets
+- layout: b781,125x71,0,0,4
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k get cm -A
+  start_directory: $HOME
+  window_name: ConfigMap
+- layout: b762,253x71,0,0,5
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k logs
+  start_directory: $HOME
+  window_name: logs
+- layout: b763,253x71,0,0,6
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k get svc -A
+  start_directory: $HOME
+  window_name: services
+- layout: b784,125x71,0,0,7
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k get pv
+  start_directory: $HOME
+  window_name: PV
+- layout: b785,125x71,0,0,8
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: k get pvc -A
+  start_directory: $HOME
+  window_name: PVC
+- layout: b766,253x71,0,0,9
+  options:
+    automatic-rename: 'off'
+  panes:
+  - focus: 'true'
+    shell_command: kubectl get nodes
+  start_directory: $HOME
+  window_name: MAIN

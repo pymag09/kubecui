@@ -9,7 +9,7 @@ windows:
     shell_command:
       - export KUBECONFIG=~/.kube/<DEV_KUBECONFIG>.yml
       - clear
-  start_directory: /home/<USERNAME>
+  start_directory: $HOME
   window_name: <ENV NAME - Dev>
 - layout: ae24,253x71,0,0,105
   options:
@@ -19,7 +19,7 @@ windows:
     shell_command:
       - export KUBECONFIG=~/.kube/<STG_KUBECONFIG>.yml
       - clear
-  start_directory: /home/<USERNAME>
+  start_directory: $HOME
   window_name: <ENV NAME - Stg>
 - layout: a245,800x600,0,0,106
   options:
@@ -29,5 +29,5 @@ windows:
     shell_command:
       - export KUBECONFIG=~/.kube/<PROD_KUBECONFIG>.yml
       - clear
-  start_directory: /home/<USERNAME>
+  start_directory: $HOME
   window_name: <ENV NAME - Prod>
