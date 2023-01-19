@@ -33,7 +33,10 @@ Key combinations you may find helpful:
 * **Ctrl+r** - if you followed the installation instructions for fzf, most probably you use fzf to browse shell history. If you didn't, you should try, cause it is fun and makes your experience with kubecui more plesant.
 
 ### DARK_SIDE
-The most efficient and the most interactive mode. Requires minimum typing. Unfortunately this mode goes against the main concept of `kubecui`. You don't type commands, rather switch between windows and sessions. You enter this mode by executing `k start`. After `k start` initializes the environment you will be able to switch between sessions. Each session corresponds to a single context (dev,stage or prod). The shortcut for switching between sessions - `Ctrl+b s`. Each session has 10 windows(for pods, deployments, logs, ingresses, configmaps, secrets, services, PV, PVC and one empty window for any commands). Why are there 10 windows? To make it easier to switch between them. Quick switching - `Ctrl+b number from 0-9`. Or `Ctrl+b w`. It pops up interface with windows list, use arrow keys to choose the window.
+The most efficient and the most interactive mode. Requires minimum typing. Unfortunately this mode goes against the main concept of `kubecui`. You don't type commands, rather switch between windows and sessions. You enter this mode by executing `k start`. After `k start` initializes the environment you will be able to switch between sessions. Each session corresponds to a single context (dev,stage or prod). The shortcut for switching between sessions - `Ctrl+b s`. Each session has 10 windows(for pods, deployments, logs, ingresses, configmaps, secrets, services, PV, PVC and one empty window for any commands). Why are there 10 windows? To make it easier to switch between them. Quick switching - `Ctrl+b number from 0-9`. Or `Ctrl+b w`. 
+
+* ![windows](https://github.com/pymag09/kubecui/blob/main/images/dmw.png)
+It pops up interface with windows list, use arrow keys to choose the window.
 
 ## Installation
 
