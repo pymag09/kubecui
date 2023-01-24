@@ -119,7 +119,7 @@ k() {
 
     "explain" ) __explain__;;
 
-    ?( )top?( )pod?( )+(-A|--all-namespaces) ) __top_all__;;
+    ?( )top?( )@(po)?(d)?(s)?( )+(-A|--all-namespaces) ) __top_all__;;
 
     explain+( )+([a-z]*) )
             __explain_obj__ $(echo "$@" | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
