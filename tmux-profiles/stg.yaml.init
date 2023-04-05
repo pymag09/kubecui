@@ -72,9 +72,9 @@ windows:
     automatic-rename: 'off'
   panes:
   - focus: 'true'
-    shell_command: k get pvc -A
+    shell_command: k get event -A
   start_directory: $HOME
-  window_name: PVC
+  window_name: Events
 - layout: b766,253x71,0,0,9
   options:
     automatic-rename: 'off'

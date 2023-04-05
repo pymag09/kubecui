@@ -4,12 +4,13 @@ __logs__(){
   export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
   fzf --info=inline --layout=reverse --header-lines=1 \
    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-   --header $'>> Enter (kubectl exec) || CTRL-L (open log in editor) || CTRL-R (refresh) || CTRL-/ (change view) <<\n\n' \
+   --header $'>> Enter (kubectl exec) || CTRL-L (open log in editor) || CTRL-R (refresh) CTRL+K (kill pod) || CTRL-/ (change view) <<\n\n' \
    --bind 'ctrl-/:change-preview-window(50%,border-bottom|hidden|)' \
    --bind 'enter:execute:kubectl exec -it --namespace {1} {2} -- bash > /dev/tty' \
+   --bind 'ctrl-k:execute:kubectl delete pod --namespace {1} {2}' \
    --bind 'ctrl-l:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2}) > /dev/tty' \
    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-   --preview-window up:follow,80% \
+   --preview-window up:follow,80%,wrap \
    --preview 'kubectl logs --follow --all-containers --tail=200 --namespace {1} {2}' "$@"
 }
 
@@ -58,6 +59,16 @@ __top_all__(){
     --preview 'kubectl describe pod {2} -n {1}'
 }
 
+__get_events_all__(){
+  export FZF_DEFAULT_COMMAND="kubectl get event --all-namespaces"
+  fzf --info=inline --header-lines=1 --layout=reverse \
+    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
+    --header $'>> Ctrl+r: Reload || Sort by .. Ctrl + k: first time || Ctrl + l: last time  <<\n\n' \
+    --bind 'enter:accept' \
+    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
+    --bind 'ctrl-l:reload:$FZF_DEFAULT_COMMAND --sort-by=".lastTimestamp"' \
+    --bind 'ctrl-k:reload:$FZF_DEFAULT_COMMAND --sort-by=".firstTimestamp"'
+}
 __explain__(){
   export FZF_DEFAULT_COMMAND="kubectl api-resources"
   fzf --layout=reverse --header-lines=1 --info=inline \
@@ -120,6 +131,8 @@ k() {
     "explain" ) __explain__;;
 
     ?( )top?( )@(po)?(d)?(s)?( )+(-A|--all-namespaces) ) __top_all__;;
+
+    ?( )get?( )event?(s)?( )+(-A|--all-namespaces) ) __get_events_all__;;
 
     explain+( )+([a-z]*) )
             __explain_obj__ $(echo "$@" | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
