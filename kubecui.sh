@@ -1,13 +1,26 @@
 #!/bin/bash
 
+function tcp_port_pair()
+{
+  pod_port=$(kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].ports[?(@.protocol=="TCP")].containerPort}' | tr " " "\n" | sort -r | tail -1)
+  echo "Press Ctrl+C to close the session."
+  read lower_port upper_port < /proc/sys/net/ipv4/ip_local_port_range
+  while :; do
+      for (( port = lower_port ; port <= upper_port ; port++ )); do
+          kubectl -n ${1} port-forward pods/${2} $port:$pod_port && break 2
+      done
+  done
+}
 __logs__(){
   export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
+  export -f tcp_port_pair
   fzf --info=inline --layout=reverse --header-lines=1 \
    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-   --header $'>> Enter (kubectl exec) || CTRL-L (open log in editor) || CTRL-R (refresh) CTRL+K (kill pod) || CTRL-/ (change view) <<\n\n' \
+   --header $'>> Enter (kubectl exec) || CTRL-L (open log in editor) || F2 (port-forward) || CTRL-R (refresh) CTRL+K (kill pod) || CTRL-/ (change view) <<\n\n' \
    --bind 'ctrl-/:change-preview-window(50%,border-bottom|hidden|)' \
    --bind 'enter:execute:kubectl exec -it --namespace {1} {2} -- bash > /dev/tty' \
    --bind 'ctrl-k:execute:kubectl delete pod --namespace {1} {2}' \
+   --bind 'f2:execute:tcp_port_pair {1} {2}' \
    --bind 'ctrl-l:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2}) > /dev/tty' \
    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
    --preview-window up:follow,80%,wrap \
