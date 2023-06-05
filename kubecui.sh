@@ -1,5 +1,17 @@
 #!/bin/bash
 
+function node-shell(){
+  shell_pod_json="{\"apiVersion\":\"v1\",\"spec\":{\"volumes\":[{\"name\":\"kube-api-access-g5t5g\",\"projected\":{\"sources\":[{\"serviceAccountToken\":{\"expirationSeconds\":3607,\"path\":\"token\"}},{\"configMap\":{\"name\":\"kube-root-ca.crt\",\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}]}},{\"downwardAPI\":{\"items\":[{\"path\":\"namespace\",\"fieldRef\":{\"apiVersion\":\"v1\",\"fieldPath\":\"metadata.namespace\"}}]}}],\"defaultMode\":420}}],\"containers\":[{\"name\":\"shell\",\"image\":\"docker.io/alpine:3.13\",\"command\":[\"nsenter\"],\"args\":[\"-t\",\"1\",\"-m\",\"-u\",\"-i\",\"-n\",\"sleep\",\"14000\"],\"volumeMounts\":[{\"name\":\"kube-api-access-g5t5g\",\"readOnly\":true,\"mountPath\":\"/var/run/secrets/kubernetes.io/serviceaccount\"}],\"terminationMessagePath\":\"/dev/termination-log\",\"terminationMessagePolicy\":\"File\",\"imagePullPolicy\":\"IfNotPresent\",\"securityContext\":{\"privileged\":true}}],\"restartPolicy\":\"Never\",\"terminationGracePeriodSeconds\":0,\"nodeName\":\"NODE_NAME\",\"hostNetwork\":true,\"hostPID\":true,\"hostIPC\":true,\"tolerations\":[{\"operator\":\"Exists\"}],\"priorityClassName\":\"system-node-critical\",\"priority\":2000001000,\"enableServiceLinks\":true,\"preemptionPolicy\":\"PreemptLowerPriority\"}}"
+  pod_name_suffix=$(echo $RANDOM | md5sum | head -c 20)
+  echo -e "\n\nWait until pod will be scheduled. \nIt might take several seconds.\n\n..."
+  kubectl -n kube-system run \
+  kube-shell-${pod_name_suffix} \
+  --image=alpine:3.13 \
+  --overrides=$(echo $shell_pod_json | sed -e "s/NODE_NAME/${1}/") && \
+  sleep 5 && \
+  kubectl -n kube-system exec -it kube-shell-${pod_name_suffix} -- bash
+}
+
 function tcp_port_pair()
 {
   pod_port=$(kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].ports[?(@.protocol=="TCP")].containerPort}' | tr " " "\n" | sort -r | tail -1)
@@ -31,16 +43,32 @@ __get_obj__(){
   export RS_TYPE=$(echo $1 | base64 -d)
   export FZF_DEFAULT_COMMAND="kubectl get ${RS_TYPE} -n ${NAMESPACE:-default}"
   export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
-  fzf --layout=reverse --header-lines=1 --info=inline \
-    --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-    --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
-    --preview-window=right:50% \
-    --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
-    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-    --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
-    --bind 'ctrl-f:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
-    --bind 'enter:accept' \
-    --preview 'kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1}'
+  export -f node-shell
+  case "$RS_TYPE" in
+    node?(s) )
+      fzf --layout=reverse --header-lines=1 --info=inline \
+        --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
+        --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl+E (shell) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
+        --preview-window=right:50% \
+        --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
+        --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
+        --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
+        --bind 'ctrl-e:execute:node-shell {1}' \
+        --bind 'ctrl-f:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
+        --bind 'enter:accept' \
+        --preview 'kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1}';;
+    *)
+      fzf --layout=reverse --header-lines=1 --info=inline \
+        --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
+        --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
+        --preview-window=right:50% \
+        --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
+        --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
+        --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
+        --bind 'ctrl-f:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
+        --bind 'enter:accept' \
+        --preview 'kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1}';;
+  esac
 }
 
 __get_obj_all__(){
