@@ -25,14 +25,11 @@ function tcp_port_pair()
 }
 __logs__(){
   export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
-  export -f tcp_port_pair
   fzf --info=inline --layout=reverse --header-lines=1 \
    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-   --header $'>> Enter (kubectl exec) || CTRL-L (open log in editor) || F2 (port-forward) || CTRL-R (refresh) CTRL+K (kill pod) || CTRL-/ (change view) <<\n\n' \
+   --header $'>> Enter (kubectl exec) || CTRL-L (open log in editor) || CTRL-R (refresh) || CTRL-/ (change view) <<\n\n' \
    --bind 'ctrl-/:change-preview-window(50%,border-bottom|hidden|)' \
    --bind 'enter:execute:kubectl exec -it --namespace {1} {2} -- bash > /dev/tty' \
-   --bind 'ctrl-k:execute:kubectl delete pod --namespace {1} {2}' \
-   --bind 'f2:execute:tcp_port_pair {1} {2}' \
    --bind 'ctrl-l:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2}) > /dev/tty' \
    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
    --preview-window up:follow,80%,wrap \
@@ -44,46 +41,66 @@ __get_obj__(){
   export FZF_DEFAULT_COMMAND="kubectl get ${RS_TYPE} -n ${NAMESPACE:-default}"
   export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
   export -f node-shell
+  PARAMS=()
   case "$RS_TYPE" in
     node?(s) )
-      fzf --layout=reverse --header-lines=1 --info=inline \
-        --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-        --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl+E (shell) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
-        --preview-window=right:50% \
-        --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
-        --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-        --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
-        --bind 'ctrl-e:execute:node-shell {1}' \
-        --bind 'ctrl-f:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
-        --bind 'enter:accept' \
-        --preview 'kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1}';;
+        PARAMS+=(--bind 'f2:execute:node-shell {1}')
+        HEADER='>> Scrolling: SHIFT - up/down || F1 (descr search) || F2 (shell) || F3 (YAML) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+        ;;
+    pod?(s) )
+        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace ${NAMESPACE:-default} {1} -- bash > /dev/tty')
+        HEADER='>> Scrolling: SHIFT - up/down || F1 (descr search) || F2 (shell) || F3 (YAML) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+        ;;
     *)
-      fzf --layout=reverse --header-lines=1 --info=inline \
-        --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-        --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
-        --preview-window=right:50% \
-        --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
-        --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-        --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
-        --bind 'ctrl-f:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
-        --bind 'enter:accept' \
-        --preview 'kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1}';;
+      HEADER='>> Scrolling: SHIFT - up/down || F1 (descr search) || F3 (YAML) || F4 (edit) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+      ;;
   esac
+  fzf --layout=reverse -m --header-lines=1 --info=inline \
+    --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
+    --header $"${HEADER}" \
+    --preview-window=right:50% \
+    --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
+    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
+    --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
+    --bind 'f1:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
+    --bind 'f4:execute:kubectl -n ${NAMESPACE:-default} edit $RS_TYPE {1}' \
+    --bind 'f8:execute:kubectl delete ${RS_TYPE} {1} --namespace ${NAMESPACE}' \
+    --bind 'f3:execute:kubectl -n ${NAMESPACE:-default} get $RS_TYPE {1} -o yaml | less' \
+    "${PARAMS[@]}" \
+    --bind 'enter:accept' \
+    --preview 'kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1}'
 }
 
 __get_obj_all__(){
   export RS_TYPE=$(echo $1 | base64 -d)
   export FZF_DEFAULT_COMMAND="kubectl get $RS_TYPE -A"
   export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
-  fzf --layout=reverse --header-lines=1 --info=inline \
+  export -f tcp_port_pair
+  PARAMS=()
+  case "$RS_TYPE" in
+    pod?(s) )
+        # PARAMS+=(--bind 'f8:execute:kubectl delete pod {2} --namespace {1}')
+        PARAMS+=(--bind 'f6:execute:tcp_port_pair {1} {2}')
+        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -- bash > /dev/tty')
+        HEADER='>> Scrolling: SHIFT - up/down || F1 (descr search) || F2 (shell) || F3 (YAML) || F6 (port-forward) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+        ;;
+    *)
+      HEADER='>> Scrolling: SHIFT - up/down || F1 (descr search) || F3 (YAML) || F4 (edit) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+      ;;
+  esac
+  fzf --layout=reverse -m --header-lines=1 --info=inline \
     --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}') >" \
-    --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
+    --header $"${HEADER}" \
     --preview-window=right:50% \
     --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
     --bind 'enter:accept' \
+    --bind 'f8:execute:kubectl delete ${RS_TYPE} {2} --namespace {1}' \
+    --bind 'f4:execute:kubectl edit ${RS_TYPE} {2} --namespace {1}' \
     --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
     --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
-    --bind 'ctrl-f:execute:kubectl describe $RS_TYPE {2} -n {1} | less' \
+    "${PARAMS[@]}" \
+    --bind 'f3:execute:kubectl get $RS_TYPE {2} -n {1} -o yaml | less' \
+    --bind 'f1:execute:kubectl describe $RS_TYPE {2} -n {1} | less' \
     --preview 'kubectl describe $RS_TYPE {2} -n {1}'
 }
 
