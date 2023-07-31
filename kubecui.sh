@@ -14,7 +14,7 @@ function node-shell(){
 
 function tcp_port_pair()
 {
-  pod_port=$(kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].ports[?(@.protocol=="TCP")].containerPort}' | tr " " "\n" | sort -r | tail -1)
+  pod_port=$(kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].ports[?(@.protocol=="TCP")].containerPort}' | tr " " "\n" | fzf)
   echo "Press Ctrl+C to close the session."
   read lower_port upper_port < /proc/sys/net/ipv4/ip_local_port_range
   while :; do
