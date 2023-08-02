@@ -12,9 +12,14 @@ function node-shell(){
   kubectl -n kube-system exec -it kube-shell-${pod_name_suffix} -- bash
 }
 
+function pod_containers()
+{
+  kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].name}' | tr " " "\n" | fzf --border=double --border-label="╢ Container ╟" --margin 40%
+}
+
 function tcp_port_pair()
 {
-  pod_port=$(kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].ports[?(@.protocol=="TCP")].containerPort}' | tr " " "\n" | fzf)
+  pod_port=$(kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].ports[?(@.protocol=="TCP")].containerPort}' | tr " " "\n" | fzf --border=double --border-label="╢ Port ╟" --margin 40%)
   echo "Press Ctrl+C to close the session."
   read lower_port upper_port < /proc/sys/net/ipv4/ip_local_port_range
   while :; do
@@ -27,9 +32,8 @@ __logs__(){
   export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
   fzf --info=inline --layout=reverse --header-lines=1 \
    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-   --header $'>> Enter (kubectl exec) || CTRL-L (open log in editor) || CTRL-R (refresh) || CTRL-/ (change view) <<\n\n' \
+   --header $'>> CTRL-L (open log in editor) || CTRL-R (refresh) || CTRL-/ (change view) <<\n\n' \
    --bind 'ctrl-/:change-preview-window(50%,border-bottom|hidden|)' \
-   --bind 'enter:execute:kubectl exec -it --namespace {1} {2} -- bash > /dev/tty' \
    --bind 'ctrl-l:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2}) > /dev/tty' \
    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
    --preview-window up:follow,80%,wrap \
@@ -47,14 +51,17 @@ __get_obj__(){
   case "$RS_TYPE" in
     node?(s) )
         PARAMS+=(--bind 'f2:execute:node-shell {1}')
-        HEADER='>> Scrolling: SHIFT - up/down || F1 (descr search) || F2 (shell) || F3 (YAML) || F5 (descr search) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (descr search) || F2 (shell) || F3 (YAML) || F5 (descr search) || F8 (delete)'
         ;;
     pod?(s) )
-        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace ${NAMESPACE:-default} {1} -- bash > /dev/tty')
-        HEADER='>> Scrolling: SHIFT - up/down || F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace ${NAMESPACE:-default} {1} -c $(pod_containers ${NAMESPACE:-default} {1}) -- bash > /dev/tty')
+        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
         ;;
     *)
-      HEADER='>> Scrolling: SHIFT - up/down || F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+      HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
       ;;
   esac
   fzf --layout=reverse -m --header-lines=1 --info=inline \
@@ -121,22 +128,25 @@ __get_obj_all__(){
   export -f tcp_port_pair
   export -f __explain_obj__
   export -f __prepare_explain__
+  export -f pod_containers
   PARAMS=()
   case "$RS_TYPE" in
     pod?(s) )
         # PARAMS+=(--bind 'f8:execute:kubectl delete pod {2} --namespace {1}')
         PARAMS+=(--bind 'f6:execute:tcp_port_pair {1} {2}')
-        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -- bash > /dev/tty')
-        HEADER='>> Scrolling: SHIFT - up/down || F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (port-forward) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -c $(pod_containers {1} {2}) -- bash > /dev/tty')
+        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (port-forward) || F8 (delete)'
         ;;
     *)
-      HEADER='>> Scrolling: SHIFT - up/down || F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) <<\n\n'
+      HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
       ;;
   esac
   fzf --layout=reverse -m --header-lines=1 --info=inline \
     --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}') >" \
     --header $"${HEADER}" \
-    --preview-window=right:50% \
+    --preview-window 'right,50%' \
     --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
     --bind 'enter:accept' \
     --bind 'f8:execute:kubectl delete ${RS_TYPE} {2} --namespace {1}' \
