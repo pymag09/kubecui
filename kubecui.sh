@@ -47,6 +47,7 @@ __get_obj__(){
   export -f node-shell
   export -f __explain_obj__
   export -f __prepare_explain__
+  export -f pod_containers
   PARAMS=()
   case "$RS_TYPE" in
     node?(s) )
@@ -55,7 +56,7 @@ __get_obj__(){
 F1 (descr search) || F2 (shell) || F3 (YAML) || F5 (descr search) || F8 (delete)'
         ;;
     pod?(s) )
-        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace ${NAMESPACE:-default} {1} -c $(pod_containers ${NAMESPACE:-default} {1}) -- bash > /dev/tty')
+        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace ${NAMESPACE:-default} {1} -c $(pod_containers ${NAMESPACE:-default} {1}) -- bash || sh > /dev/tty')
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
         ;;
@@ -134,7 +135,7 @@ __get_obj_all__(){
     pod?(s) )
         # PARAMS+=(--bind 'f8:execute:kubectl delete pod {2} --namespace {1}')
         PARAMS+=(--bind 'f6:execute:tcp_port_pair {1} {2}')
-        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -c $(pod_containers {1} {2}) -- bash > /dev/tty')
+        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -c $(pod_containers {1} {2}) -- bash || sh > /dev/tty')
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (port-forward) || F8 (delete)'
         ;;
