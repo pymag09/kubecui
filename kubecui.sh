@@ -28,6 +28,12 @@ function tcp_port_pair()
       done
   done
 }
+
+function secret_base64_decode()
+{
+  echo '' | fzf --border=double --preview-window=top,99%,wrap --border-label="╢ Base64 decoded ╟" --preview="kubectl get secret ${1}  --namespace ${2} -o jsonpath='{.data}' | jq 'walk(if type == \"string\" then @base64d else . end)'"
+}
+
 __logs__(){
   export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
   fzf --info=inline --layout=reverse --header-lines=1 \
@@ -48,17 +54,32 @@ __get_obj__(){
   export -f __explain_obj__
   export -f __prepare_explain__
   export -f pod_containers
+  export -f secret_base64_decode
   PARAMS=()
   case "$RS_TYPE" in
     node?(s) )
         PARAMS+=(--bind 'f2:execute:node-shell {1}')
+        PARAMS+=(--bind 'f6:execute:kubectl cordon {1}')
+        PARAMS+=(--bind 'f7:execute:kubectl uncordon {1}')
+        PARAMS+=(--bind 'f9:execute:kubectl drain {1} --ignore-daemonsets --delete-emptydir-data')
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (descr search) || F2 (shell) || F3 (YAML) || F5 (descr search) || F8 (delete)'
+F1 (descr search) || F2 (shell) || F3 (YAML) || F5 (descr search) || F6 (cordon) || F7 (uncordon) || F8 (delete) || F9 (drain)'
         ;;
     pod?(s) )
         PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace ${NAMESPACE:-default} {1} -c $(pod_containers ${NAMESPACE:-default} {1}) -- bash || sh > /dev/tty')
+        PARAMS+=(--bind 'f7:execute:kubectl -n ${NAMESPACE:-default} debug {1} -it --image=ubuntu --share-processes --copy-to {1}-debug-container -- bash')
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
+F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F7 (debug container) ||F8 (delete)'
+        ;;
+    daemonsets?(s)|statefulset?(s)|deployment?(s) )
+        PARAMS+=(--bind "f2:execute:kubectl rollout restart ${RS_TYPE}  --namespace ${NAMESPACE:-default} {1}")
+        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (explain) || F2 (restart) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
+        ;;
+    secret?(s) )
+        PARAMS+=(--bind "f6:execute:secret_base64_decode {1} ${NAMESPACE:-default}")
+        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (decode) || F8 (delete)'
         ;;
     *)
       HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
@@ -132,12 +153,22 @@ __get_obj_all__(){
   export -f pod_containers
   PARAMS=()
   case "$RS_TYPE" in
+    secret?(s) )
+        PARAMS+=(--bind "f6:execute:secret_base64_decode {2} {1}")
+        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (decode) || F8 (delete)'
+        ;;
+    daemonsets?(s)|statefulset?(s)|deployment?(s) )
+        PARAMS+=(--bind "f2:execute:kubectl --namespace {1} rollout restart ${RS_TYPE} {2}")
+        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+F1 (explain) || F2 (restart) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
+        ;;
     pod?(s) )
-        # PARAMS+=(--bind 'f8:execute:kubectl delete pod {2} --namespace {1}')
         PARAMS+=(--bind 'f6:execute:tcp_port_pair {1} {2}')
+        PARAMS+=(--bind 'f7:execute:kubectl -n {1} debug {2} -it --image=ubuntu --share-processes --copy-to {2}-debug-container -- bash')
         PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -c $(pod_containers {1} {2}) -- bash || sh > /dev/tty')
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (port-forward) || F8 (delete)'
+F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (port-forward) || F7 (debug container) || F8 (delete)'
         ;;
     *)
       HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
@@ -185,9 +216,6 @@ __get_events_all__(){
     --bind 'ctrl-k:reload:$FZF_DEFAULT_COMMAND --sort-by=".firstTimestamp"'
 }
 
-
-
-
 k() {
   OBJ=$(echo "$@" | sed -r 's/^.*get[[:space:]](\w+[[:space:]]?[a-z]+[-0-9a-z]*)[[:space:]]?(-n)?.*$/\1/' | base64)
   shopt -s extglob
@@ -199,7 +227,8 @@ k() {
             kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --layout=reverse --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
 
     "logs") __logs__;;
-
+    "stop") tmux kill-session -a
+            tmux kill-session;;
     "start") if [[ -n $(which tmuxp) ]]; then
               ${KUI_PATH}/kui_start.sh
              else
