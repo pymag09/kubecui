@@ -151,6 +151,7 @@ __get_obj_all__(){
   export -f __explain_obj__
   export -f __prepare_explain__
   export -f pod_containers
+  export -f secret_base64_decode
   PARAMS=()
   case "$RS_TYPE" in
     secret?(s) )
