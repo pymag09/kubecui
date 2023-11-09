@@ -73,7 +73,7 @@ F1 (descr search) || F2 (shell) || F3 (YAML) || F5 (descr search) || F6 (cordon)
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F7 (debug container) ||F8 (delete)'
         ;;
-    daemonsets?(s)|statefulset?(s)|deployment?(s) )
+    daemonsets?(s)|ds|statefulset?(s)|sts|deployment?(s)|deploy )
         PARAMS+=(--bind "f2:execute:kubectl rollout restart ${RS_TYPE}  --namespace ${NAMESPACE:-default} {1}")
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 F1 (explain) || F2 (restart) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
@@ -161,7 +161,7 @@ __get_obj_all__(){
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (decode) || F8 (delete)'
         ;;
-    daemonsets?(s)|statefulset?(s)|deployment?(s) )
+    daemonsets?(s)|ds|statefulset?(s)|sts|deployment?(s)|deploy )
         PARAMS+=(--bind "f2:execute:kubectl --namespace {1} rollout restart ${RS_TYPE} {2}")
         HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 F1 (explain) || F2 (restart) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
