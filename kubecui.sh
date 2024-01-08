@@ -2,39 +2,10 @@
 
 shopt -s extglob
 
-function node-shell(){
-  shell_pod_json="{\"apiVersion\":\"v1\",\"spec\":{\"volumes\":[{\"name\":\"kube-api-access-g5t5g\",\"projected\":{\"sources\":[{\"serviceAccountToken\":{\"expirationSeconds\":3607,\"path\":\"token\"}},{\"configMap\":{\"name\":\"kube-root-ca.crt\",\"items\":[{\"key\":\"ca.crt\",\"path\":\"ca.crt\"}]}},{\"downwardAPI\":{\"items\":[{\"path\":\"namespace\",\"fieldRef\":{\"apiVersion\":\"v1\",\"fieldPath\":\"metadata.namespace\"}}]}}],\"defaultMode\":420}}],\"containers\":[{\"name\":\"shell\",\"image\":\"docker.io/alpine:3.13\",\"command\":[\"nsenter\"],\"args\":[\"-t\",\"1\",\"-m\",\"-u\",\"-i\",\"-n\",\"sleep\",\"14000\"],\"volumeMounts\":[{\"name\":\"kube-api-access-g5t5g\",\"readOnly\":true,\"mountPath\":\"/var/run/secrets/kubernetes.io/serviceaccount\"}],\"terminationMessagePath\":\"/dev/termination-log\",\"terminationMessagePolicy\":\"File\",\"imagePullPolicy\":\"IfNotPresent\",\"securityContext\":{\"privileged\":true}}],\"restartPolicy\":\"Never\",\"terminationGracePeriodSeconds\":0,\"nodeName\":\"NODE_NAME\",\"hostNetwork\":true,\"hostPID\":true,\"hostIPC\":true,\"tolerations\":[{\"operator\":\"Exists\"}],\"priorityClassName\":\"system-node-critical\",\"priority\":2000001000,\"enableServiceLinks\":true,\"preemptionPolicy\":\"PreemptLowerPriority\"}}"
-  pod_name_suffix=$(echo $RANDOM | md5sum | head -c 20)
-  echo -e "\n\nWait until pod will be scheduled. \nIt might take several seconds.\n\n..."
-  kubectl -n kube-system run \
-  kube-shell-${pod_name_suffix} \
-  --image=alpine:3.13 \
-  --overrides=$(echo $shell_pod_json | sed -e "s/NODE_NAME/${1}/") && \
-  sleep 5 && \
-  kubectl -n kube-system exec -it kube-shell-${pod_name_suffix} -- bash
-}
-
-function pod_containers()
-{
-  kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].name}' | tr " " "\n" | fzf --border=double --border-label="╢ Container ╟" --margin 40%
-}
-
-function tcp_port_pair()
-{
-  pod_port=$(kubectl -n ${1} get pod ${2} -o jsonpath='{.spec.containers[*].ports[?(@.protocol=="TCP")].containerPort}' | tr " " "\n" | fzf --border=double --border-label="╢ Port ╟" --margin 40%)
-  echo "Press Ctrl+C to close the session."
-  read lower_port upper_port < /proc/sys/net/ipv4/ip_local_port_range
-  while :; do
-      for (( port = lower_port ; port <= upper_port ; port++ )); do
-          kubectl -n ${1} port-forward pods/${2} $port:$pod_port && break 2
-      done
-  done
-}
-
-function secret_base64_decode()
-{
-  echo '' | fzf --border=double --preview-window=top,99%,wrap --border-label="╢ Base64 decoded ╟" --preview="kubectl get secret ${1}  --namespace ${2} -o jsonpath='{.data}' | jq 'walk(if type == \"string\" then @base64d else . end)'"
-}
+for shotcutfolder in $(find $KUI_PATH/fx/libs -type f -name "*.sh"); do
+  source $shotcutfolder
+  export -f $(<"$(echo "${shotcutfolder}" | sed 's/\.sh/\.entrypoint/')")
+done
 
 __logs__(){
   export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
@@ -46,63 +17,6 @@ __logs__(){
    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
    --preview-window up:follow,80%,wrap \
    --preview 'kubectl logs --follow --all-containers --tail=200 --namespace {1} {2}' "$@"
-}
-
-__get_obj__(){
-  export RS_TYPE=$(echo $1 | base64 -d)
-  export FZF_DEFAULT_COMMAND="kubectl get ${RS_TYPE} -n ${NAMESPACE:-default}"
-  export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
-  export -f node-shell
-  export -f __explain_obj__
-  export -f __prepare_explain__
-  export -f pod_containers
-  export -f secret_base64_decode
-  PARAMS=()
-  case "$RS_TYPE" in
-    node?(s) )
-        PARAMS+=(--bind 'f2:execute:node-shell {1}')
-        PARAMS+=(--bind 'f6:execute:kubectl cordon {1}')
-        PARAMS+=(--bind 'f7:execute:kubectl uncordon {1}')
-        PARAMS+=(--bind 'f9:execute:kubectl drain {1} --ignore-daemonsets --delete-emptydir-data')
-        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (descr search) || F2 (shell) || F3 (YAML) || F5 (descr search) || F6 (cordon) || F7 (uncordon) || F8 (delete) || F9 (drain)'
-        ;;
-    pod?(s) )
-        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace ${NAMESPACE:-default} {1} -c $(pod_containers ${NAMESPACE:-default} {1}) -- bash || sh > /dev/tty')
-        PARAMS+=(--bind 'f7:execute:kubectl -n ${NAMESPACE:-default} debug {1} -it --image=ubuntu --share-processes --copy-to {1}-debug-container -- bash')
-        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F7 (debug container) ||F8 (delete)'
-        ;;
-    daemonsets?(s)|ds|statefulset?(s)|sts|deployment?(s)|deploy )
-        PARAMS+=(--bind "f2:execute:kubectl rollout restart ${RS_TYPE}  --namespace ${NAMESPACE:-default} {1}")
-        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F2 (restart) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
-        ;;
-    secret?(s) )
-        PARAMS+=(--bind "f6:execute:secret_base64_decode {1} ${NAMESPACE:-default}")
-        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (decode) || F8 (delete)'
-        ;;
-    *)
-      HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
-      ;;
-  esac
-  fzf --layout=reverse -m --header-lines=1 --info=inline \
-    --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-    --header $"${HEADER}" \
-    --preview-window=right:50% \
-    --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
-    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-    --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
-    --bind 'f1:execute:kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1} | less' \
-    --bind 'f4:execute:kubectl -n ${NAMESPACE:-default} edit $RS_TYPE {1}' \
-    --bind 'f8:execute:kubectl delete ${RS_TYPE} {1} --namespace ${NAMESPACE}' \
-    --bind 'f1:execute:__explain_obj__ ${RS_TYPE}' \
-    --bind 'f3:execute:kubectl -n ${NAMESPACE:-default} get $RS_TYPE {1} -o yaml | less' \
-    "${PARAMS[@]}" \
-    --bind 'enter:accept' \
-    --preview 'kubectl -n ${NAMESPACE:-default} describe $RS_TYPE {1}'
 }
 
 __explain__(){
@@ -118,81 +32,45 @@ __explain__(){
     --bind 'ctrl-f:execute:kubectl describe $RS_TYPE {2} -n {1} | less' \
     --preview 'kubectl explain {1}'
 }
-__explain_obj__(){
-  export RS_TYPE=$1
-  __prepare_explain__ $1 | fzf --layout=reverse --header-lines=1 --info=inline \
-    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-    --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) Ctrl-f (search word) <<\n\n' \
-    --preview-window=right:70% \
-    --bind 'ctrl-/:change-preview-window(40%|50%|70%)' \
+
+__get_obj__(){
+  RS_TYPE=$(echo $1 | base64 -d)
+  export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
+  source "$KUI_PATH"/fx/default/config
+  if [[ -f "$KUI_PATH"/fx/"${RS_TYPE}"/config ]]; then
+    source "$KUI_PATH"/fx/"${RS_TYPE}"/config
+  fi
+
+  fzf --layout=reverse -m --header-lines=1 --info=inline \
+    --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
+    --header $"${HEADER}" \
+    --preview-window=right:50% \
+    --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
+    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
+    --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
+    "${PARAMS[@]}" \
     --bind 'enter:accept' \
-    --bind 'ctrl-f:execute:kubectl explain ${RS_TYPE}.{1} | less' \
-    --preview 'kubectl explain ${RS_TYPE}.{1}'
-}
-
-__prepare_explain__(){
-  export RS_TYPE=$1
-
-  EXPLAIN=$(kubectl explain ${RS_TYPE} --recursive | sed -r 's/FIELDS:/---/' | sed -n '\|---|,$p' | sed -r 's/(\w+)\t.*/\1:/g' | yq -o props -P . | sed -r 's/ =//g')
-
-  for line in $EXPLAIN; do
-    echo $line
-    ST=$line
-    for level in $(echo $line | sed -r 's/^([a-zA-Z\.]+)\.(\w+)$/\1/' | sed -r 's/\./ /g'); do
-      ST=$(echo $ST | sed -r 's/^([a-zA-Z\.]+)\.(\w+)$/\1/')
-      echo $ST
-    done
-  done | sort | uniq
+    --preview "kubectl describe $RS_TYPE {1}"
 }
 
 __get_obj_all__(){
-  export RS_TYPE=$(echo $1 | base64 -d)
-  export FZF_DEFAULT_COMMAND="kubectl get $RS_TYPE -A"
+  RS_TYPE=$(echo $1 | base64 -d)
   export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
-  export -f tcp_port_pair
-  export -f __explain_obj__
-  export -f __prepare_explain__
-  export -f pod_containers
-  export -f secret_base64_decode
-  PARAMS=()
-  case "$RS_TYPE" in
-    secret?(s) )
-        PARAMS+=(--bind "f6:execute:secret_base64_decode {2} {1}")
-        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (decode) || F8 (delete)'
-        ;;
-    daemonsets?(s)|ds|statefulset?(s)|sts|deployment?(s)|deploy )
-        PARAMS+=(--bind "f2:execute:kubectl --namespace {1} rollout restart ${RS_TYPE} {2}")
-        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F2 (restart) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
-        ;;
-    pod?(s) )
-        PARAMS+=(--bind 'f6:execute:tcp_port_pair {1} {2}')
-        PARAMS+=(--bind 'f7:execute:kubectl -n {1} debug {2} -it --image=ubuntu --share-processes --copy-to {2}-debug-container -- bash')
-        PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -c $(pod_containers {1} {2}) -- bash || sh > /dev/tty')
-        HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F2 (shell) || F3 (YAML) || F4 (edit) || F5 (descr search) || F6 (port-forward) || F7 (debug container) || F8 (delete)'
-        ;;
-    *)
-      HEADER='Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
-F1 (explain) || F3 (YAML) || F4 (edit) || F5 (descr search) || F8 (delete)'
-      ;;
-  esac
+  source "$KUI_PATH"/fx/default/config
+  if [[ -f "$KUI_PATH"/fx/"${RS_TYPE}"/config ]]; then
+    source "$KUI_PATH"/fx/"${RS_TYPE}"/config
+  fi
+
   fzf --layout=reverse -m --header-lines=1 --info=inline \
     --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}') >" \
     --header $"${HEADER}" \
     --preview-window 'right,50%' \
     --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
     --bind 'enter:accept' \
-    --bind 'f8:execute:kubectl delete ${RS_TYPE} {2} --namespace {1}' \
-    --bind 'f4:execute:kubectl edit ${RS_TYPE} {2} --namespace {1}' \
     --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
     --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
     "${PARAMS[@]}" \
-    --bind 'f3:execute:kubectl get $RS_TYPE {2} -n {1} -o yaml | less' \
-    --bind 'f5:execute:kubectl describe $RS_TYPE {2} -n {1} | less' \
-    --bind 'f1:execute:__explain_obj__ ${RS_TYPE}' \
-    --preview 'kubectl describe $RS_TYPE {2} -n {1}'
+    --preview "kubectl describe $RS_TYPE {2} -n {1}"
 }
 
 __top_all__(){
@@ -219,8 +97,19 @@ __get_events_all__(){
     --bind 'ctrl-k:reload:$FZF_DEFAULT_COMMAND --sort-by=".firstTimestamp"'
 }
 
+__normalize_resource_data() {
+    local word="$1"
+
+    while read -r plural short _; do
+        if [ "$word" == "$plural" ] || [ "$word" == "$short" ] || [ "$word" == "$(echo "$plural" | sed -r 's/e?s$//')" ]; then
+            echo "$plural"
+            break
+        fi
+    done < <(kubectl api-resources --no-headers | awk '{print $1, $2}' | awk '{if (NF == 1) $2 = $1; print}' | sort -r)
+}
+
 k() {
-  OBJ=$(echo "$@" | sed -r 's/^.*get[[:space:]](\w+[[:space:]]?[a-z]+[-0-9a-z]*)[[:space:]]?(-n)?.*$/\1/' | base64)
+  OBJ=$(__normalize_resource_data $(echo "$@" | sed -r 's/^.*get[[:space:]](\w+[[:space:]]?[a-z]+[-0-9a-z]*)[[:space:]]?(-)?.*$/\1/'))
   case "$@" in
     "config use-context" )  kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
 
@@ -244,20 +133,32 @@ k() {
     ?( )get?( )event?(s)?( )+(-A|--all-namespaces) ) __get_events_all__;;
 
     explain+( )+([a-z]*) )
-            __explain_obj__ $(echo "$@" | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
+            explain_obj $(echo "$@" | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
 
     *-o?( )?(*) ) kubectl "$@";;
-
-    ?( )get?( )+([a-z|.])?( )+(-A|--all-namespaces) )
-            __get_obj_all__ $OBJ;;
 
     ?(-n|--namespace)?([a-z0-9-]*)?( )get?( )events?( )?(-A|--all-namespaces)?(-n|--namespace)?([a-z0-9-]*) )
             kubectl "$@" --sort-by=.lastTimestamp;;
 
+    ?( )get?( )+([a-z|.])?( )+(-A|--all-namespaces) )
+            export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A"
+            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$OBJ" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
+            export NONSCOPED=$SCOPED
+            __get_obj_all__ $(echo $OBJ | base64)
+            ;;
+
     ?(-n | --namespace)?([a-z0-9-]*)get?( )+([a-z]*)?(-n | --namespace)?([0-9a-z-]*) )
             NS=$(kubectl "$@" -o jsonpath='{.items[*].metadata.namespace}' | sed 's/ /\n/g' | uniq)
-            export NAMESPACE=${NS:-$(kubectl "$@" -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
-              __get_obj__ $OBJ
+            NAMESPACE=${NS:-$(kubectl "$@" -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
+            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$OBJ" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
+            export NONSCOPED=$SCOPED
+            if [[ "${SCOPE}" == " " ]]; then
+              export FZF_DEFAULT_COMMAND="kubectl get $OBJ"
+              __get_obj__ $(echo $OBJ | base64)
+            else
+              export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A --field-selector metadata.namespace=${NAMESPACE}"
+              __get_obj_all__ $(echo $OBJ | base64)
+            fi
             ;;
     *) kubectl "$@";;
   esac

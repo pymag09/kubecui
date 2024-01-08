@@ -1,0 +1,9 @@
+HEADER='==========================================================================================================
+[F1]Explain [F2]Shell [F3]YAML [F5]Descr search [F6]Cordon [F7]Uncordon [F8]Delete [F9]Drain
+Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+=========================================================================================================='
+
+PARAMS+=(--bind 'f2:execute:node-shell {1}')
+PARAMS+=(--bind 'f6:execute:kubectl cordon {1}')
+PARAMS+=(--bind 'f7:execute:kubectl uncordon {1}')
+PARAMS+=(--bind 'f9:execute:kubectl drain {1} --ignore-daemonsets --delete-emptydir-data')

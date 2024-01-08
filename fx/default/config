@@ -1,0 +1,12 @@
+PARAMS=()
+
+HEADER='==========================================================================================================
+[F1]Explain [F3]YAML [F4]Edit [F5] Descr search [F8]Delete)
+Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+=========================================================================================================='
+
+PARAMS+=(--bind "f1:execute:explain_obj ${RS_TYPE}")
+PARAMS+=(--bind "f3:execute:kubectl get $RS_TYPE ${SCOPED:+{2\} -n {1\}}${NONSCOPED:-{1\}} -o yaml | less")
+PARAMS+=(--bind "f4:execute:kubectl edit $RS_TYPE ${SCOPED:+{2\} -n {1\}}${NONSCOPED:-{1\}}")
+PARAMS+=(--bind "f5:execute:kubectl describe $RS_TYPE ${SCOPED:+{2\} -n {1\}}${NONSCOPED:-{1\}} | less")
+PARAMS+=(--bind "f8:execute:kubectl delete $RS_TYPE ${SCOPED:+{2\} -n {1\}}${NONSCOPED:-{1\}}")

@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:mantic
 
 WORKDIR /root
 RUN apt update && apt install -y curl git tmux tmuxp unzip vim jq

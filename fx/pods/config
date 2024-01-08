@@ -1,0 +1,8 @@
+HEADER='==========================================================================================================
+[F1]Explain [F2]Shell [F3]YAML [F4]Edit [F5]Descr Search [F6]Port forward [F7] DebugContainer [F8]Delete
+Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+=========================================================================================================='
+
+PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -c $(pod_containers {1} {2}) -- bash || sh > /dev/tty')
+PARAMS+=(--bind 'f6:execute:tcp_port_pair {1} {2}')
+PARAMS+=(--bind 'f7:execute:kubectl debug {2} --namespace {1} -it --image=ubuntu --share-processes --copy-to {2}-debug-container -- bash')

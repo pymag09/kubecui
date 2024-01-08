@@ -1,0 +1,6 @@
+HEADER='==========================================================================================================
+[F1]Explain [F3]YAML [F4]Edit [F5]Descr search [F6]SA Token [F8]Delete
+Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+=========================================================================================================='
+
+PARAMS+=(--bind "f6:execute:create_sa_token {1} {2}")
