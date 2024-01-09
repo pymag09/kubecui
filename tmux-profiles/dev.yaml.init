@@ -1,6 +1,7 @@
 session_name: 'Dev'
 shell_command_before:
   - export KUBECONFIG=<KUBECONFIG_PATH>
+  - export ENV_FZF_COLOR="bg+:34,preview-bg:236"
 windows:
 - focus: 'true'
   layout: b75d,253x71,0,0,0

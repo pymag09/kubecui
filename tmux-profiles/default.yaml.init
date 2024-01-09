@@ -8,6 +8,7 @@ windows:
   - focus: 'true'
     shell_command:
       - export KUBECONFIG=~/.kube/<DEV_KUBECONFIG>.yml
+      - export ENV_FZF_COLOR="bg+:34,preview-bg:236"
       - clear
   start_directory: $HOME
   window_name: <ENV NAME - Dev>
@@ -18,6 +19,7 @@ windows:
   - focus: 'true'
     shell_command:
       - export KUBECONFIG=~/.kube/<STG_KUBECONFIG>.yml
+      - export ENV_FZF_COLOR="bg+:129,preview-bg:236"
       - clear
   start_directory: $HOME
   window_name: <ENV NAME - Stg>
@@ -28,6 +30,7 @@ windows:
   - focus: 'true'
     shell_command:
       - export KUBECONFIG=~/.kube/<PROD_KUBECONFIG>.yml
+      - export ENV_FZF_COLOR="bg+:197,preview-bg:236"
       - clear
   start_directory: $HOME
   window_name: <ENV NAME - Prod>

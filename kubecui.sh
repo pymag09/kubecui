@@ -12,6 +12,7 @@ __logs__(){
   fzf --info=inline --layout=reverse --header-lines=1 \
    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
    --header $'>> CTRL-L (open log in editor) || CTRL-R (refresh) || CTRL-/ (change view) <<\n\n' \
+   --color ${ENV_FZF_COLOR} \
    --bind 'ctrl-/:change-preview-window(50%,border-bottom|hidden|)' \
    --bind 'ctrl-l:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2}) > /dev/tty' \
    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
@@ -25,6 +26,7 @@ __explain__(){
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
     --preview-window=right:50% \
+    --color ${ENV_FZF_COLOR} \
     --bind 'ctrl-/:change-preview-window(70%|40%|50%)' \
     --bind 'enter:accept' \
     --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
@@ -44,6 +46,7 @@ __get_obj__(){
   fzf --layout=reverse -m --header-lines=1 --info=inline \
     --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $"${HEADER}" \
+    --color ${ENV_FZF_COLOR} \
     --preview-window=right:50% \
     --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
     --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
@@ -64,6 +67,7 @@ __get_obj_all__(){
   fzf --layout=reverse -m --header-lines=1 --info=inline \
     --prompt "[ $RS_TYPE ] CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}') >" \
     --header $"${HEADER}" \
+    --color ${ENV_FZF_COLOR} \
     --preview-window 'right,50%' \
     --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
     --bind 'enter:accept' \
@@ -91,6 +95,7 @@ __get_events_all__(){
   fzf --info=inline --header-lines=1 --layout=reverse \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Ctrl+r: Reload || Sort by .. Ctrl + k: first time || Ctrl + l: last time  <<\n\n' \
+    --color ${ENV_FZF_COLOR} \
     --bind 'enter:accept' \
     --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
     --bind 'ctrl-l:reload:$FZF_DEFAULT_COMMAND --sort-by=".lastTimestamp"' \
