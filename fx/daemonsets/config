@@ -1,6 +1,8 @@
 HEADER='==========================================================================================================
-[F1]Explain [F2]Restart [F3]YAML [F4]Edit [F5]Descr search [F8]Delete
+[F1]Explain [F2]Restart [F3]YAML [F4]Edit [F5]Descr search [F6]Trivy YAML scan [F7]Trivy image scan [F8]Delete
 Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 =========================================================================================================='
 
 PARAMS+=(--bind "f2:execute:kubectl --namespace {1} rollout restart ${RS_TYPE} {2}")
+PARAMS+=(--bind "f6:execute:trivy_scan_manifest {1} {2} ${RS_TYPE}")
+PARAMS+=(--bind "f7:execute:trivy_scan_image {1} {2} ${RS_TYPE}")
