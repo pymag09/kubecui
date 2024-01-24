@@ -153,9 +153,9 @@ k() {
             ;;
 
     ?(-n | --namespace)?([a-z0-9-]*)get?( )+([a-z]*)?(-n | --namespace)?([0-9a-z-]*) )
-            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$OBJ" | wc -l | tr -d '0' | sed -r 's/[1-9]+/ /')
+            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$OBJ" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
             export NONSCOPED=$SCOPED
-            if [[ "${SCOPED}" -eq " " ]]; then
+            if [[ "${SCOPED}" == " " ]]; then
               NS=$(kubectl "$@" -o jsonpath='{.items[*].metadata.namespace}' | sed 's/ /\n/g' | uniq)
               NAMESPACE=${NS:-$(kubectl "$@" -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
               export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A --field-selector metadata.namespace=${NAMESPACE}"
