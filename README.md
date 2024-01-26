@@ -15,6 +15,7 @@ However, kubectl slows you down - requires heavy keyboard typing. In order to al
 * `fzf` (command-line fuzzy finder) - [https://github.com/junegunn/fzf](https://github.com/junegunn/fzf)
 * `yq` (portable command-line YAML processor)
 * Optional: `tmux` (terminal multiplexer)
+* Optional: `trivy` (security scanner)
 * Optional: `tmuxp` (tmux sessions manager)
 
 ## Three modes
@@ -165,3 +166,5 @@ Most probabaly you are falimiar with or already use `k` alias for `kubectl`. If 
   - Singale panel. Set default namespace.
 * k start
   - starts `cluster per window` session
+* k stop
+  - stop and clear session. Without stop next time you run k start it will suggest you to return to previous session
