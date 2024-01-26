@@ -106,7 +106,7 @@ __normalize_resource_data() {
     local word="$1"
 
     while read -r plural short _; do
-        if [ "$word" == "$plural" ] || [ "$word" == "$short" ] || [ "$word" == "$(echo "$plural" | sed -r 's/e?s$//')" ]; then
+        if [ "$word" == "$plural" ] || [ "$word" == "$short" ] || [ "$word" == "$(echo "$plural" | sed -r 's/s$//')" ] || [ "$word" == "$(echo "$plural" | sed -r 's/e?s$//')" ]; then
             echo "$plural"
             break
         fi
