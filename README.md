@@ -168,3 +168,9 @@ Most probabaly you are falimiar with or already use `k` alias for `kubectl`. If 
   - starts `cluster per window` session
 * k stop
   - stop and clear session. Without stop next time you run k start it will suggest you to return to previous session
+
+## Additional materials
+* https://medium.com/@magelan09/kubectl-on-steroids-there-is-life-beyond-k9s-5c214e878c83
+* https://medium.com/@magelan09/kubecui-enhanced-interactive-kubectl-dark-side-mode-720a1f19b0bf
+* https://medium.com/@magelan09/navigating-kubernetes-effortlessly-with-kubecui-new-shortcuts-and-features-part-3-df3ab0449518
+* https://medium.com/@magelan09/kubecui-ephemeral-containers-and-more-part-4-f069d7ebc405
