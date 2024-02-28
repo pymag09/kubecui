@@ -114,7 +114,7 @@ __normalize_resource_data() {
 }
 
 k() {
-  OBJ=$(__normalize_resource_data $(echo "$@" | sed -r 's/^.*get[[:space:]](\w+[[:space:]]?[a-z]+[-0-9a-z]*)[[:space:]]?(-)?.*$/\1/'))
+  OBJ=$(__normalize_resource_data $(echo "$@" | sed -E 's/^.*get[[:space:]]([[:alnum:]]+[[:space:]]?[[:lower:]]+[-0-9[:lower:]]*)[[:space:]]?(-)?.*$/\1/'))
   case "$@" in
     "config use-context" )  kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
 
@@ -138,7 +138,7 @@ k() {
     ?( )get?( )event?(s)?( )+(-A|--all-namespaces) ) __get_events_all__;;
 
     explain+( )+([a-z]*) )
-            explain_obj $(echo "$@" | sed -r 's/^.*explain[[:space:]](\w+)$/\1/');;
+            explain_obj $(echo "$@" | sed -r 's/^.*explain[[:space:]]([[:lower:]]+)$/\1/');;
 
     *-o?( )?(*) ) kubectl "$@";;
 
