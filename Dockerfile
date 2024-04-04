@@ -11,6 +11,11 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
 #
 RUN curl -L0 "https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.deb" -o "trivy.deb" && dpkg -i trivy.deb
 #
+# Install kubent. The tool to check for deprecated or removed APIs
+#
+ENV TERM=xterm
+RUN sh -c "$(curl -sSL https://git.io/install-kubent)"
+#
 # kubecui dependencies
 #
 RUN git clone https://github.com/junegunn/fzf.git && yes | fzf/install

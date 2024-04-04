@@ -17,6 +17,7 @@ However, kubectl slows you down - requires heavy keyboard typing. In order to al
 * Optional: `tmux` (terminal multiplexer)
 * Optional: `trivy` (security scanner)
 * Optional: `tmuxp` (tmux sessions manager)
+* Optional: `kubent` (the test for removed or deprecated APIs)
 
 ## Three modes
 
