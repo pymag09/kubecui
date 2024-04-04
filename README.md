@@ -171,6 +171,7 @@ Most probabaly you are falimiar with or already use `k` alias for `kubectl`. If 
   - stop and clear session. Without stop next time you run k start it will suggest you to return to previous session
 
 ## Additional materials
+* https://medium.com/@magelan09/unleashing-unlimited-potential-the-secret-to-kubecuis-unmatched-flexibility-4a41ba7003c1
 * https://medium.com/@magelan09/kubectl-on-steroids-there-is-life-beyond-k9s-5c214e878c83
 * https://medium.com/@magelan09/kubecui-enhanced-interactive-kubectl-dark-side-mode-720a1f19b0bf
 * https://medium.com/@magelan09/navigating-kubernetes-effortlessly-with-kubecui-new-shortcuts-and-features-part-3-df3ab0449518
