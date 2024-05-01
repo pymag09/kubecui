@@ -13,7 +13,7 @@ __logs__(){
    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
    --header $'>> CTRL-L (open log in editor) || CTRL-R (refresh) || CTRL-/ (change view) <<\n\n' \
    --color ${ENV_FZF_COLOR} \
-   --bind 'ctrl-/:change-preview-window(50%,border-bottom|hidden|)' \
+   --bind 'ctrl-/:change-preview-window(50%|80%)' \
    --bind 'ctrl-l:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2}) > /dev/tty' \
    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
    --preview-window up:follow,80%,wrap \
