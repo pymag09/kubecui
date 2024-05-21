@@ -105,6 +105,10 @@ __get_events_all__(){
 __normalize_resource_data() {
     local word="$1"
 
+    if [[ $word =~ \. ]]; then
+      echo "$word"
+      return 0
+    fi
     while read -r plural short _; do
         if [ "$word" == "$plural" ] || [ "$word" == "$short" ] || [ "$word" == "$(echo "$plural" | sed -r 's/s$//')" ] || [ "$word" == "$(echo "$plural" | sed -r 's/e?s$//')" ]; then
             echo "$plural"
@@ -114,7 +118,7 @@ __normalize_resource_data() {
 }
 
 k() {
-  OBJ=$(__normalize_resource_data $(echo "$@" | sed -E 's/^.*get[[:space:]]([[:alnum:]]+[[:space:]]?[[:lower:]]+[-0-9[:lower:]]*)[[:space:]]?(-)?.*$/\1/'))
+  OBJ=$(__normalize_resource_data $(echo "$@" | sed -E 's/^.*get[[:space:]]([[:alnum:]]+[[:space:]]?[[:lower:]]+[-0-9.[:lower:]]*)[[:space:]]?(-)?.*$/\1/'))
   case "$@" in
     "config use-context" )  kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
 
