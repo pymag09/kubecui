@@ -6,5 +6,5 @@ Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o 
 PARAMS+=(--bind 'f2:execute:node-shell {1}')
 PARAMS+=(--bind 'f6:execute:kubectl cordon {1}')
 PARAMS+=(--bind 'f7:execute:kubectl uncordon {1}')
-PARAMS+=(--bind 'f9:execute:kubectl drain {1} --ignore-daemonsets --delete-emptydir-data')
+PARAMS+=(--bind 'f9:execute:confirm && kubectl drain {1} --ignore-daemonsets --delete-emptydir-data')
 PARAMS+=(--bind 'f10:execute:kubent -t $(kubectl version -o yaml | yq .serverVersion.major).$(($(kubectl version -o yaml | yq .serverVersion.minor | sed -E "s/^([0-9]+).*/\1/") + 1)).0 | less -R --use-color')
