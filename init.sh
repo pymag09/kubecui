@@ -1,5 +1,7 @@
 #!/bin/bash
 
+KUI_PATH="${KUI_PATH:-$(pwd)}"
+
 function copy_dm_profile()
 {
     if [[ ! -f ~/.tmuxp/$1 ]]; then
@@ -10,13 +12,14 @@ function copy_dm_profile()
             return 1
         fi
 }
-
-if [[ -z $(grep "source ${response:-$(pwd)}/kubecui.sh" ~/.bashrc) ]]; then
-    read -r -p "Add kubecui to .bashrc. [source $(pwd)/kubecui.sh] " response
-#
-# kubecui.sh creates 'k' alias. Adding it to the .bashrc file to make it work.
-#
-    echo "source ${response:-$(pwd)}/kubecui.sh" >> ~/.bashrc
+if [[ -z $(grep "/kubecui.sh" ~/.bashrc) ]]; then
+	echo "Adding kubecui as 'k' function to .bashrc."
+	read -r -p "Hit enter to accept or enter different dir [source $KUI_PATH/kubecui.sh] " response
+	#
+	# kubecui.sh creates 'k' function. Adding it to the .bashrc file to make it work.
+	#
+	echo "export KUI_PATH='$KUI_PATH'" >>~/.bashrc
+	echo "source '$KUI_PATH/kubecui.sh'" >>~/.bashrc
 fi
 read -r -p "Will you use tmux and tmuxp? [y/n] " response
 if [[ $response =~ ^([yY])$ ]]; then
@@ -64,20 +67,10 @@ if [[ $response =~ ^([yY])$ ]]; then
             sed -i 's/<KUBECONFIG_PATH>/'"${kubecfg:-~\/.kube\/prod.yml}"'/g' ~/.tmuxp/prod.yaml
         fi
     fi
-    if [[ -z $(grep "export KUI_PATH=" ~/.bashrc) ]]; then
-        if [[ -z $(grep -E 'export KUI_PATH=.*' ~/.bashrc) ]]; then
-            read -r -p "Add \"KUI_PATH\" to .bashrc? [$(pwd)] " response
-#
-# kui_start.sh activates multi-window, multi-session mode. Regardless of what mode you have chosen, either NORMAL or DARK-SIDE
-# you can start it by typeing 'k start' command.
-#
-            echo "export KUI_PATH=${response:-$(pwd)}" >> ~/.bashrc
-            if [[ "$darkside" =~ ^([nN])$ ]]; then
-                sed -i 's/#tmuxp load default/tmuxp load default/g' ${response:-$(pwd)}/kui_start.sh
-            else
-                sed -i 's/#tmuxp load dev stg prod/tmuxp load dev stg prod/g' ${response:-$(pwd)}/kui_start.sh
-            fi
-        fi
+    if [[ "$darkside" =~ ^([nN])$ ]]; then
+        sed -i 's/#tmuxp load default/tmuxp load default/g' ${$KUI_PATH}/kui_start.sh
+    else
+        sed -i 's/#tmuxp load dev stg prod/tmuxp load dev stg prod/g' ${$KUI_PATH}/kui_start.sh
     fi
 fi
 cat <<EOF
@@ -85,7 +78,7 @@ cat <<EOF
 #                                                       #
 #  Your ~/.bashrc file has been changed.                #
 #  To apply changes - run source ~/.bashrc              #
-#  or restart your computer                             #
+#  or restart bash                                      #
 #                                                       #
 #########################################################
 EOF
