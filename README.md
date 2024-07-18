@@ -126,7 +126,19 @@ Every time you run `k start` it executes `kui_start.sh`. The script initializes 
 
 # SORRY.
 
-I know that not all of you use bash. I really hope that you know how to do the same for other shells. At this moment I am not able to test `kubecui` for all the most popular shells like zsh.
+The `k` function is writtin in bash and can be sourced directly here.
+
+In order to use the tool e.g. from zsh, create a wrapper.  
+E.g. add `alias k="$HOME/.local/bin/kubecui"` in your `.zshrc`, with this content:
+
+```bash
+❯ cat ~/.local/bin/kubecui
+#!/usr/bin/env bash
+export KUI_PATH=< path to this repo >
+source "$KUI_PATH/kubecui.sh"
+k "$@"
+```
+
 
 ## From fzf README file:
 
