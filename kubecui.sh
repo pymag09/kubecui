@@ -1,5 +1,5 @@
 #!/bin/bash
-
+unalias k 2>/dev/null || true
 shopt -s extglob
 
 for shotcutfolder in $(find $KUI_PATH/fx/libs -type f -name "*.sh"); do
