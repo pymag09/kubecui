@@ -19,10 +19,10 @@ explain_obj(){
   export RS_TYPE=$1
   __prepare_explain__ $1 | fzf --layout=reverse --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-    --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) Ctrl-f (search word) <<\n\n' \
+    --header $'>> Scrolling: shift - up/down || '$CTRL'-/ (change view) Ctrl-f (search word) <<\n\n' \
     --preview-window=right:70% \
-    --bind 'ctrl-/:change-preview-window(40%|50%|70%)' \
+    --bind ''$CTRL'-/:change-preview-window(40%|50%|70%)' \
     --bind 'enter:accept' \
-    --bind 'ctrl-f:execute:kubectl explain ${RS_TYPE}.{1} | less' \
+    --bind ''$CTRL'-f:execute:kubectl explain ${RS_TYPE}.{1} | less' \
     --preview 'kubectl explain ${RS_TYPE}.{1}'
 }

@@ -1,6 +1,6 @@
 HEADER='==========================================================================================================
 [F1]Explain [F2]Shell [F3]YAML [F4]Edit [F5]Descr Search [F6]Port forward [F7] DebugContainer [F8]Delete
-Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+Scrolling (shift - up/down) || '$CTRL'-/ (change view) || '$CTRL'-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 =========================================================================================================='
 
 PARAMS+=(--bind 'f2:execute:kubectl exec -it --namespace {1} {2} -c $(pod_containers {1} {2}) -- bash || sh > /dev/tty')

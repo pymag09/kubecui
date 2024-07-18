@@ -1,6 +1,6 @@
 HEADER='==========================================================================================================
 [F1]Explain [F2]Shell [F3]YAML [F5]Descr search [F6]Cordon [F7]Uncordon [F8]Delete [F9]Drain [F10] Api deprecation report
-Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+Scrolling (shift - up/down) || '$CTRL'-/ (change view) || '$CTRL'-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 =========================================================================================================='
 
 PARAMS+=(--bind 'f2:execute:node-shell {1}')

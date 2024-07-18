@@ -1,6 +1,6 @@
 HEADER='==========================================================================================================
 [F1]Explain [F2]Restart [F3]YAML [F4]Edit [F5]Descr search [F6]Trivy YAML scan [F7]Trivy image scan [F8]Delete
-Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
+Scrolling (shift - up/down) || '$CTRL'-/ (change view) || '$CTRL'-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 =========================================================================================================='
 
 PARAMS+=(--bind "f2:execute:confirm && kubectl --namespace {1} rollout restart ${RS_TYPE} {2}")

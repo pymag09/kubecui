@@ -2,6 +2,10 @@
 unalias k 2>/dev/null || true
 shopt -s extglob
 
+export CTRL="${KUI_MOD:-ctrl}"
+export HK_EDIT="${KUI_HK_EDIT:-$CTRL-L}"
+export KUI_EDITOR="${KUI_EDITOR:-${EDITOR:-vim}}"
+
 for shotcutfolder in $(find $KUI_PATH/fx/libs -type f -name "*.sh"); do
   source $shotcutfolder
   export -f $(<"$(echo "${shotcutfolder}" | sed 's/\.sh/\.entrypoint/')")
@@ -11,11 +15,11 @@ __logs__(){
   export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
   fzf --info=inline --layout=reverse --header-lines=1 \
    --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-   --header $'>> CTRL-L (open log in editor) || CTRL-R (refresh) || CTRL-/ (change view) <<\n\n' \
+   --header $'>> '$HK_EDIT' (open log in '$KUI_EDITOR') || '$CTRL'-R (refresh) || '$CTRL'-/ (change view) <<\n\n' \
    --color ${ENV_FZF_COLOR} \
-   --bind 'ctrl-/:change-preview-window(50%|80%)' \
-   --bind 'ctrl-l:execute:${EDITOR:-vim} <(kubectl logs --all-containers --namespace {1} {2}) > /dev/tty' \
-   --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
+   --bind ''$CTRL'-/:change-preview-window(50%|80%)' \
+   --bind ''$HK_EDIT':execute:('$KUI_EDITOR' <(kubectl logs --namespace {1} {2}) >/dev/tty)' \
+   --bind ''$CTRL'-r:reload:$FZF_DEFAULT_COMMAND' \
    --preview-window up:follow,80%,wrap \
    --preview 'kubectl logs --follow --all-containers --tail=200 --namespace {1} {2}' "$@"
 }
@@ -24,19 +28,19 @@ __explain__(){
   export FZF_DEFAULT_COMMAND="kubectl api-resources"
   fzf --layout=reverse --header-lines=1 --info=inline \
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
-    --header $'>> Scrolling: SHIFT - up/down || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
+    --header $'>> Scrolling: shift - up/down || '$CTRL'-/ (change view) || '$CTRL'-R (refresh. omit -o wide) || Ctrl-L (-o wide) || Ctrl-f (search word) <<\n\n' \
     --preview-window=right:50% \
     --color ${ENV_FZF_COLOR} \
-    --bind 'ctrl-/:change-preview-window(70%|40%|50%)' \
+    --bind ''$CTRL'-/:change-preview-window(70%|40%|50%)' \
     --bind 'enter:accept' \
-    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-    --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
-    --bind 'ctrl-f:execute:kubectl describe $RS_TYPE {2} -n {1} | less' \
+    --bind ''$CTRL'-r:reload:$FZF_DEFAULT_COMMAND' \
+    --bind ''$CTRL'-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
+    --bind ''$CTRL'-f:execute:(kubectl describe '$RS_TYPE' {2} -n {1} | less)' \
     --preview 'kubectl explain {1}'
 }
 
 __get_obj__(){
-  RS_TYPE=$(echo $1 | base64 -d)
+  export RS_TYPE=$(echo $1 | base64 -d)
   export FZF_DEFAULT_COMMAND_WIDE="${FZF_DEFAULT_COMMAND} -o wide"
   source "$KUI_PATH"/fx/default/config
   if [[ -f "$KUI_PATH"/fx/"${RS_TYPE}"/config ]]; then
@@ -48,9 +52,9 @@ __get_obj__(){
     --header $"${HEADER}" \
     --color ${ENV_FZF_COLOR} \
     --preview-window=right:50% \
-    --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
-    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-    --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
+    --bind ''$CTRL'-/:change-preview-window(99%|70%|40%|0|50%)' \
+    --bind ''$CTRL'-r:reload:$FZF_DEFAULT_COMMAND' \
+    --bind ''$CTRL'-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
     "${PARAMS[@]}" \
     --bind 'enter:accept' \
     --preview "kubectl describe $RS_TYPE {1}"
@@ -69,10 +73,10 @@ __get_obj_all__(){
     --header $"${HEADER}" \
     --color ${ENV_FZF_COLOR} \
     --preview-window 'right,50%' \
-    --bind 'ctrl-/:change-preview-window(99%|70%|40%|0|50%)' \
+    --bind ''$CTRL'-/:change-preview-window(99%|70%|40%|0|50%)' \
     --bind 'enter:accept' \
-    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-    --bind 'ctrl-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
+    --bind ''$CTRL'-r:reload:$FZF_DEFAULT_COMMAND' \
+    --bind ''$CTRL'-L:reload:$FZF_DEFAULT_COMMAND_WIDE' \
     "${PARAMS[@]}" \
     --preview "kubectl describe $RS_TYPE {2} -n {1}"
 }
@@ -83,10 +87,10 @@ __top_all__(){
     --prompt "CL: $(kubectl config current-context | sed 's/-context$//') NS: $(kubectl config get-contexts | grep "*" | awk '{print $5}')> " \
     --header $'>> Sort by .. Ctrl + u: CPU || Ctrl + m: MEM  <<\n\n' \
     --preview-window=right:50% \
-    --bind 'ctrl-/:change-preview-window(70%|40%|50%)' \
+    --bind ''$CTRL'-/:change-preview-window(70%|40%|50%)' \
     --bind 'enter:accept' \
-    --bind 'ctrl-u:reload:$FZF_DEFAULT_COMMAND | sort -k 3 -h -r' \
-    --bind 'ctrl-m:reload:$FZF_DEFAULT_COMMAND | sort -k 4 -h -r' \
+    --bind ''$CTRL'-u:reload:$FZF_DEFAULT_COMMAND | sort -k 3 -h -r' \
+    --bind ''$CTRL'-m:reload:$FZF_DEFAULT_COMMAND | sort -k 4 -h -r' \
     --preview 'kubectl describe pod {2} -n {1}'
 }
 
@@ -97,9 +101,9 @@ __get_events_all__(){
     --header $'>> Ctrl+r: Reload || Sort by .. Ctrl + k: first time || Ctrl + l: last time  <<\n\n' \
     --color ${ENV_FZF_COLOR} \
     --bind 'enter:accept' \
-    --bind 'ctrl-r:reload:$FZF_DEFAULT_COMMAND' \
-    --bind 'ctrl-l:reload:$FZF_DEFAULT_COMMAND --sort-by=".lastTimestamp"' \
-    --bind 'ctrl-k:reload:$FZF_DEFAULT_COMMAND --sort-by=".firstTimestamp"'
+    --bind ''$CTRL'-r:reload:$FZF_DEFAULT_COMMAND' \
+    --bind ''$CTRL'-l:reload:$FZF_DEFAULT_COMMAND --sort-by=".lastTimestamp"' \
+    --bind ''$CTRL'-k:reload:$FZF_DEFAULT_COMMAND --sort-by=".firstTimestamp"'
 }
 
 __normalize_resource_data() {
