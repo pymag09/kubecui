@@ -3,6 +3,6 @@ HEADER='========================================================================
 Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 =========================================================================================================='
 
-PARAMS+=(--bind "f2:execute:confirm && kubectl --namespace {1} rollout restart ${RS_TYPE} {2}")
+PARAMS+=(--bind "f2:execute:confirm "restart" ${RS_TYPE}/{2} && kubectl --namespace {1} rollout restart ${RS_TYPE} {2}")
 PARAMS+=(--bind "f6:execute:trivy_scan_manifest {1} {2} ${RS_TYPE}")
 PARAMS+=(--bind "f7:execute:trivy_scan_image {1} {2} ${RS_TYPE}")

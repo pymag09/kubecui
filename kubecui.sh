@@ -120,11 +120,11 @@ __normalize_resource_data() {
 k() {
   OBJ=$(__normalize_resource_data $(echo "$@" | sed -E 's/^.*get[[:space:]]([[:alnum:]]+[[:space:]]?[[:lower:]]+[-0-9.[:lower:]]*)[[:space:]]?(-)?.*$/\1/'))
   case "$@" in
-    "config use-context" )  kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
+    "config use-context" )  kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([A-Z0-9a-z\-]*\).*/\1/');;
 
     "config set ns" )
             CURRENT_CONTEXT=$(kubectl config current-context)
-            kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --layout=reverse --header-lines=1 | sed 's/^\**\s*\([a-z\-]*\).*/\1/');;
+            kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --layout=reverse --header-lines=1 | sed 's/^\**\s*\([A-Z0-9a-z\-]*\).*/\1/');;
 
     "logs") __logs__;;
     "stop") tmux kill-session -a
@@ -151,13 +151,13 @@ k() {
 
     ?( )get?( )+([a-z|.])?( )+(-A|--all-namespaces) )
             export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A"
-            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$OBJ" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
+            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$(echo $OBJ | sed -r "s/^([a-zA-Z]+).*/\1/")" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
             export NONSCOPED=$SCOPED
             __get_obj_all__ $(echo $OBJ | base64)
             ;;
 
     ?(-n | --namespace)?([a-z0-9-]*)get?( )+([a-z]*)?(-n | --namespace)?([0-9a-z-]*) )
-            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$OBJ" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
+            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$(echo $OBJ | sed -r "s/^([a-zA-Z]+).*/\1/")" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
             export NONSCOPED=$SCOPED
             if [[ "${SCOPED}" == " " ]]; then
               NS=$(kubectl "$@" -o jsonpath='{.items[*].metadata.namespace}' | sed 's/ /\n/g' | uniq)
