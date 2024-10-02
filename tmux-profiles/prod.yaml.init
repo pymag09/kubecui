@@ -2,6 +2,9 @@ session_name: 'Prod'
 shell_command_before:
   - export KUBECONFIG=<KUBECONFIG_PATH>
   - export ENV_FZF_COLOR="bg+:197,preview-bg:236"
+options:
+  status-bg: "colour197"
+  status-fg: "white"
 windows:
 - focus: 'true'
   layout: b75d,253x71,0,0,0
