@@ -1,7 +1,7 @@
 __prepare_explain__(){
   export RS_TYPE=$1
 
-  EXPLAIN=$(kubectl explain ${RS_TYPE} --recursive | sed -r 's/FIELDS:/---/' | sed -n '\|---|,$p' | sed -r 's/(\w+)\t.*/\1:/g' | yq -o props -P . | sed -r 's/ =//g')
+  EXPLAIN=$(kubectl explain ${RS_TYPE} --recursive | sed -r 's/FIELDS:/---/' | sed -n '\|---|,$p' | sed -r 's/(\w+)(\t|\s)*.*/\1: /g' | yq -o props -P . | sed -r 's/ =//g')
 
   for line in $EXPLAIN; do
     echo $line

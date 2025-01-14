@@ -153,7 +153,11 @@ k() {
             export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A"
             export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$(echo $OBJ | sed -r "s/^([a-zA-Z]+).*/\1/")" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
             export NONSCOPED=$SCOPED
-            __get_obj_all__ $(echo $OBJ | base64)
+            if [[ "${SCOPED}" == " " ]]; then
+              __get_obj_all__ $(echo $OBJ | base64)
+            else
+              __get_obj__ $(echo $OBJ | base64)
+            fi
             ;;
 
     ?(-n | --namespace)?([a-z0-9-]*)get?( )+([a-z]*)?(-n | --namespace)?([0-9a-z-]*) )
