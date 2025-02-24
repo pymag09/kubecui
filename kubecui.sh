@@ -1,11 +1,19 @@
 #!/bin/bash
 
-shopt -s extglob
-
 for shotcutfolder in $(find $KUI_PATH/fx/libs -type f -name "*.sh"); do
   source $shotcutfolder
   export -f $(<"$(echo "${shotcutfolder}" | sed 's/\.sh/\.entrypoint/')")
 done
+
+contains_option() {
+  local elem="$1"
+  for opt in "${options[@]}"; do
+    if [[ "$opt" == "$elem"* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
 
 __logs__(){
   export FZF_DEFAULT_COMMAND="kubectl get pods --all-namespaces"
@@ -119,13 +127,47 @@ __normalize_resource_data() {
 
 k() {
   OBJ=$(__normalize_resource_data $(echo "$@" | sed -E 's/^.*get[[:space:]]([[:alnum:]]+[[:space:]]?[[:lower:]]+[-0-9.[:lower:]]*)[[:space:]]?(-)?.*$/\1/'))
-  case "$@" in
-    "config use-context" )  kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([A-Z0-9a-z\-]*\).*/\1/');;
+  export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$(echo $OBJ | sed -r "s/^([a-zA-Z]+).*/\1/")" | wc -l | tr -d " "| tr -d '0' | sed -r 's/[0-9]+/ /')
+  export NONSCOPED=$SCOPED
 
-    "config set ns" )
-            CURRENT_CONTEXT=$(kubectl config current-context)
-            kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --layout=reverse --header-lines=1 | sed 's/^\**\s*\([A-Z0-9a-z\-]*\).*/\1/');;
+  local input="$@"
 
+  params=()
+  options=()
+
+  local args=($input)
+
+  local skip_next=false
+  for i in "${!args[@]}"; do
+    if [[ "$skip_next" == "true" ]]; then
+      skip_next=false
+      continue
+    fi
+
+    local arg="${args[$i]}"
+
+    if [[ "$arg" == --*=* ]]; then
+      options+=("$arg")
+    elif [[ "$arg" == -* && "${args[$i+1]}" != -* && "${args[$i+1]}" != "" ]]; then
+      options+=("$arg ${args[$i+1]}")
+      skip_next=true
+    elif [[ "$arg" == -* ]]; then
+      options+=("$arg")
+    else
+      params+=("$arg")
+    fi
+  done
+
+  case "${params[0]}" in
+    "config" )
+      if [[ "${params[@]}" == "config use-context" ]]; then
+        kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([A-Z0-9a-z\-]*\).*/\1/')
+      fi
+      if [[ ${params[@]} == "config set ns" ]]; then
+        CURRENT_CONTEXT=$(kubectl config current-context)
+        kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --layout=reverse --header-lines=1 | sed 's/^\**\s*\([A-Z0-9a-z\-]*\).*/\1/')
+      fi
+      ;;
     "logs") __logs__;;
     "stop") tmux kill-session -a
             tmux kill-session;;
@@ -135,46 +177,49 @@ k() {
               echo "Can not find tmux/tmuxp. Please follow the instructions in the README file to install these tools"
              fi;;
 
-    "explain" ) __explain__;;
+    "explain" )
+      if [[ "$params[1]" == "" ]]; then
+        __explain__
+      else
+        explain_obj $(echo "$@" | sed -r 's/^.*explain[[:space:]]([[:lower:]]+)$/\1/')
+      fi
+      ;;
 
-    ?( )top?( )@(po)?(d)?(s)?( )+(-A|--all-namespaces) ) __top_all__;;
+    "top" )
+      what=$(__normalize_resource_data ${params[1]})
+      if test $what == "pods" && (contains_option "-A" || contains_option "--all-namespaces" ); then
+        __top_all__
+      else
+        kubectl "$@"
+      fi;;
 
-    ?( )get?( )event?(s)?( )+(-A|--all-namespaces) ) __get_events_all__;;
-
-    explain+( )+([a-z]*) )
-            explain_obj $(echo "$@" | sed -r 's/^.*explain[[:space:]]([[:lower:]]+)$/\1/');;
-
-    *-o?( )?(*) ) kubectl "$@";;
-
-    ?(-n|--namespace)?([a-z0-9-]*)?( )get?( )events?( )?(-A|--all-namespaces)?(-n|--namespace)?([a-z0-9-]*) )
-            kubectl "$@" --sort-by=.lastTimestamp;;
-
-    ?( )get?( )+([a-z|.])?( )+(-A|--all-namespaces) )
-            export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A"
-            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$(echo $OBJ | sed -r "s/^([a-zA-Z]+).*/\1/")" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
-            export NONSCOPED=$SCOPED
-            if [[ "${SCOPED}" == " " ]]; then
-              __get_obj_all__ $(echo $OBJ | base64)
-            else
-              __get_obj__ $(echo $OBJ | base64)
-            fi
-            ;;
-
-    ?(-n | --namespace)?([a-z0-9-]*)get?( )+([a-z]*)?(-n | --namespace)?([0-9a-z-]*) )
-            export SCOPED=$(kubectl api-resources --no-headers --namespaced | grep -E "^$(echo $OBJ | sed -r "s/^([a-zA-Z]+).*/\1/")" | wc -l | tr -d '0' | sed -r 's/[0-9]+/ /')
-            export NONSCOPED=$SCOPED
-            if [[ "${SCOPED}" == " " ]]; then
-              NS=$(kubectl "$@" -o jsonpath='{.items[*].metadata.namespace}' | sed 's/ /\n/g' | uniq)
-              NAMESPACE=${NS:-$(kubectl "$@" -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
-              export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A --field-selector metadata.namespace=${NAMESPACE}"
-              __get_obj_all__ $(echo $OBJ | base64)
-            else
-              export FZF_DEFAULT_COMMAND="kubectl get $OBJ"
-              unset SCOPED
-              unset NONSCOPED
-              __get_obj__ $(echo $OBJ | base64)
-            fi
-            ;;
+    "get" )
+      what=$(__normalize_resource_data ${params[1]})
+      if test $what == "events" && (contains_option "-A" || contains_option "--all-namespaces" ); then
+        __get_events_all__
+      elif contains_option "-o"; then
+        kubectl "$@"
+      elif (contains_option "-A") || (contains_option "--all-namespaces"); then
+          export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A"
+          if [[ "${SCOPED}" == " " ]]; then
+            __get_obj_all__ $(echo $OBJ | base64)
+          else
+            __get_obj__ $(echo $OBJ | base64)
+          fi
+      elif contains_option "-n" || (test -z ${options[@]}); then
+          if [[ "${SCOPED}" == " " ]]; then
+            NS=$(kubectl "$@" -o jsonpath='{.items[*].metadata.namespace}' | sed 's/ /\n/g' | uniq)
+            NAMESPACE=${NS:-$(kubectl "$@" -o jsonpath='{.metadata.namespace}' | sed 's/ /\n/g')}
+            export FZF_DEFAULT_COMMAND="kubectl get $OBJ -A --field-selector metadata.namespace=${NAMESPACE}"
+            __get_obj_all__ $(echo $OBJ | base64)
+          else
+            export FZF_DEFAULT_COMMAND="kubectl get $OBJ"
+            unset SCOPED
+            unset NONSCOPED
+            __get_obj__ $(echo $OBJ | base64)
+          fi
+      fi
+      ;;
     *) kubectl "$@";;
   esac
 }
