@@ -161,11 +161,11 @@ k() {
   case "${params[0]}" in
     "config" )
       if [[ "${params[@]}" == "config use-context" ]]; then
-        kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | sed 's/^\**\s*\([A-Z0-9a-z\-]*\).*/\1/')
+        kubectl config use-context $(kubectl config get-contexts | fzf  --layout=reverse --header-lines=1 | gsed -r 's/^\*?\s*([-0-9a-zA-Z]*).*/\1/')
       fi
       if [[ ${params[@]} == "config set ns" ]]; then
         CURRENT_CONTEXT=$(kubectl config current-context)
-        kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --layout=reverse --header-lines=1 | sed 's/^\**\s*\([A-Z0-9a-z\-]*\).*/\1/')
+        kubectl config set contexts.${CURRENT_CONTEXT}.namespace $(kubectl get ns | fzf --layout=reverse --header-lines=1 | gsed -r 's/^\*?\s*([-0-9a-zA-Z]*).*/\1/')
       fi
       ;;
     "logs") __logs__;;

@@ -1,5 +1,5 @@
 HEADER='==========================================================================================================
-[F1]Explain [F2]Shell [F3]YAML [F4]Edit [F5]Descr Search [F6]Port forward [F7] DebugContainer [F8]Delete
+[F1]Explain [F2]Shell [F3]YAML [F4]Edit [F5]Descr Search [F6]Port forward [F7] DebugContainer [F8]Delete [Ctrl+6]Clone Obj
 Scrolling (SHIFT - up/down) || CTRL-/ (change view) || CTRL-R (refresh. omit -o wide) || Ctrl-L (-o wide)
 =========================================================================================================='
 
